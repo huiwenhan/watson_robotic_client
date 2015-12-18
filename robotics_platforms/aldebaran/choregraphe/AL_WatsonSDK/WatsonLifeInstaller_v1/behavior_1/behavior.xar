@@ -1,0 +1,375 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ChoregrapheProject xmlns="http://www.aldebaran-robotics.com/schema/choregraphe/project.xsd" xar_version="3">
+    <Box name="root" id="-1" localization="8" tooltip="Root box of Choregraphe&apos;s behavior. Highest level possible." x="0" y="0">
+        <bitmap>media/images/box/root.png</bitmap>
+        <script language="4">
+            <content>
+                <![CDATA[]]>
+</content>
+        </script>
+        <Input name="onLoad" type="1" type_size="1" nature="0" inner="1" tooltip="Signal sent when diagram is loaded." id="1" />
+        <Input name="onStart" type="1" type_size="1" nature="2" inner="0" tooltip="Box behavior starts when a signal is received on this input." id="2" />
+        <Input name="onStop" type="1" type_size="1" nature="3" inner="0" tooltip="Box behavior stops when a signal is received on this input." id="3" />
+        <Output name="onStopped" type="1" type_size="1" nature="1" inner="0" tooltip="Signal sent when box behavior is finished." id="4" />
+        <Timeline enable="0">
+            <BehaviorLayer name="behavior_layer1">
+                <BehaviorKeyframe name="keyframe1" index="1">
+                    <Diagram>
+                        <Box name="Robot SDK Installer" id="3" localization="8" tooltip="" x="194" y="8">
+                            <bitmap>media/images/box/box-python-script.png</bitmap>
+                            <script language="4">
+                                <content>
+                                    <![CDATA[import os
+import json
+from os.path import expanduser
+import uuid
+
+class MyClass(GeneratedClass):
+    def __init__(self):
+        GeneratedClass.__init__(self)
+
+    def onLoad(self):
+        self.barcode=ALProxy("ALBarcodeReader")
+        self.tts = ALProxy("ALTextToSpeech")
+        self.framemanager = ALProxy("ALFrameManager")
+        self.origLanguage = self.tts.getLanguage()
+        self.tts.setLanguage("English")
+
+    def onUnload(self):
+        self.tts.setLanguage(self.origLanguage)
+        pass
+
+    def onInput_onStart(self):
+        self.tts.say("Starting registration with the Robotics SDK now. This may take a few minutes I will also be updating your robots software")
+
+        """ Get JSON from randomKey.prop file"""
+        fileName = "/../randomKey.txt"
+        fileData = self.loadJsonFile(fileName)
+        self.logger.info("randomKey.txt file data: {}".format(fileData))
+
+        """ If transient key exists get real key and reload the licnese file"""
+        self.logger.info("TRANSIENT_KEY" in fileData.keys())
+        if "TRANSIENT_KEY" in fileData.keys() :
+            #Get Call to get key
+            headers = {"transientKey": fileData["TRANSIENT_KEY"]}
+            url = str(fileData["ROBOT_GATEWAY_URL"]) + '/transient'
+            self.logger.info("HEADER: {}".format(headers))
+            self.logger.info("URL: {}".format(url))
+            resp = self.invoke_get(url, headers=headers, params=None)
+            code = int( resp.status_code )
+            resp_key = ""
+            if code == 200:
+                self.logger.info( str(resp.text) )
+                resp_key = resp.text
+            else:
+                self.tts.say("It seems like you one time key is not correct. Please re-download this application from your webpage")
+                self.onStopped()
+                return
+
+
+            #resp_key = "REAL_KEY" # TODO Parse out ROBOT_KEY from response
+            fileData["ROBOT_KEY"] = resp_key
+            del fileData["TRANSIENT_KEY"]  # Remove transient key
+        self.logger.info(fileData)
+
+        """ Check key code syntax"""
+        propertyNames = ['ROBOT_GATEWAY_URL', 'ROBOT_KEY', 'ROBOT_GATEWAY_SOCKET_URL']
+        if self.validateQRFormat(propertyNames, json.dumps(fileData)) == False:
+            self.tts.say("Your one time registration key is invalid. Please get a new aplication code from your robotics adminstration webpage.")
+            self.onStopped()
+            return
+        if fileData[ propertyNames[0] ] == "":
+            self.tts.say("Your Robot Gateway URL is invalid. Please get a new application from your robotics adminstration webpage. The registration application is only valid for a one time registration.")
+            self.onStopped()
+            return
+        if fileData[ propertyNames[1] ] == "":
+            self.tts.say("Your Robot Key is invalid. Please get a new application from your robotics adminstration webpage.")
+            self.onStopped()
+            return
+        if fileData[ propertyNames[2] ] == "":
+            self.tts.say("Your Robot Gateway Socket URL is invalid. Please get a new application from your robotics adminstration webpage.")
+            self.onStopped()
+            return
+
+        """ Write value to ~/.watson/license.wat"""
+        if not os.path.exists(expanduser("~") + '/.watson/'):
+            os.makedirs(expanduser("~") + '/.watson/')
+        f = open(expanduser("~") + "/" +'.watson/license.wat', 'w+')
+        f.write(json.dumps(fileData))
+        f.close()
+
+        """ Get Dependency List and Install Them """
+        self.downloadDependencyScript()
+        os.system('python '+os.path.expanduser('~')+'/pre_dependency_installer.py')
+        os.system('python '+os.path.expanduser('~')+'/dependency_installer.py')
+        import requests
+
+        """ Reload running watson with new license"""
+        try:
+            self.watson = ALProxy("ALWatson")
+            self.watson.initialize_license()
+        except:
+            pass
+
+        """ Register the robot with the server"""
+        registrationResult = self.registerRobot()
+        if( registrationResult == False):
+            self.tts.say("Your robot was not able to register with your server. You may be using a invalid or old installer. Please get a new installer from your robotics adminstration webpage.")
+
+        """ Download the SDK"""
+        self.downloadWatsonSDK()
+
+        """ Set the robot to start the SDK on boot"""
+        self.appendAutoload()
+
+        """ Tell the user to restart the robot"""
+        self.tts.say("I am almost ready to use watson services. Please restart me to enable my new skills")
+
+        """ Stop the behavior"""
+        self.onStopped()
+        return
+
+
+
+    def stringInArray(self, strVal, contents):
+        for i in range(len(contents)):
+            if strVal == str(contents[i]):
+                return True
+        return False
+
+    def appendAutoload(self):
+        home = expanduser("~")
+        autoload_path = home + '/naoqi/preferences/autoload.ini'
+        autoload_append_alwatson = home + '/alwatson.py\n'
+        autoload_append_check_version = home + '/check_version.py\n'
+
+        f = open(autoload_path, "r")
+        contents = f.readlines()
+        f.close()
+
+        if self.stringInArray(autoload_append_alwatson, contents) :
+            # This is already in the file
+            pass
+        else:
+            for i in range(len(contents)):
+              if '[python]' in contents[i]:
+                  contents.insert(i+1, autoload_append_alwatson)
+
+        if self.stringInArray(autoload_append_check_version, contents) :
+            # This is already in the file
+            pass
+        else:
+            for i in range(len(contents)):
+              if '[python]' in contents[i]:
+                  contents.insert(i+1, autoload_append_check_version)
+
+
+        f = open(autoload_path, "w")
+        contents = "".join(contents)
+        f.write(contents)
+        f.close()
+
+    def invoke_post(self, headers, url, body=None, params = None, files = None):
+        """Universal method to format a post request
+        :param headers: Headers used in the post call
+        :param body: The text being posted
+        :param serviceName: The service that is being called
+        :param params: Parameters for the post call"""
+        import requests
+        # service_map = self.config.get('WATSON', 'SERVICE_MAP')
+        # service_map = json.loads(service_map)
+        # url = '{}/{}'.format(self.client_url, service_map[serviceName])
+        # headers = self.createHeaders(headers)
+        return requests.request('POST', url, verify=False, headers=headers, data=body, params=params, files=files)
+
+    def invoke_get(self, url, headers, params = None):
+        """Universal method to format a get request
+        :param headers: Headers used in the get call
+        :param serviceName: The service that is being called
+        :param params: Parameters for the get call"""
+        import requests
+        #service_map = self.config.get('WATSON', 'SERVICE_MAP')
+        #service_map = json.loads(service_map)
+        #url = '{}/{}'.format(self.client_url, service_map[serviceName])
+        #headers = self.createHeaders(headers)
+        self.logger.info(url)
+        self.logger.info(headers)
+        self.logger.info(params)
+        #self.logger.info("randomKey.prop file data: {}".format(fileData))
+        return requests.get(url, verify=False, headers=headers, params=params)
+
+    def write_string_file(self, filename, data):
+        text_file = open(filename, "w")
+        text_file.write(data)
+        text_file.close()
+
+    def get_mac_id(self):
+        """Extracts the mac id from the robot. It is used when sending data to the gateway to ensure the robot is registered."""
+        mac = uuid.getnode()
+        return ':'.join('%02X' % ((mac >> 8*i) & 0xff) for i in reversed(xrange(6))).encode('ascii', 'ignore')
+
+    def downloadWatsonSDK(self):
+        home = expanduser("~")
+        license = json.loads( open(home+'/'+'.watson/license.wat', 'r+').read() )
+        key = license['ROBOT_KEY']
+        mac_id = self.get_mac_id()
+        client_url = license['ROBOT_GATEWAY_URL']
+
+        watson_path = home+'/watson.py'
+        alwatson_path = home+'/alwatson.py'
+        config_path = home+'/config.ini'
+        check_version_path = home+'/check_version.py'
+
+        url = client_url + '/file'
+        headers = {"ROBOT_KEY": key, "MAC_ID":mac_id}
+        watson_payload = json.dumps({"filename":"watson.py"})
+        alwatson_payload = json.dumps({"filename":"alwatson.py"})
+        config_payload = json.dumps({"filename":"config.ini"})
+        check_version_payload = json.dumps({"filename":"check_version.py"})
+
+
+        watson_data = self.invoke_post(headers, url, watson_payload, None, None)
+        alwatson_data = self.invoke_post(headers, url, alwatson_payload, None, None)
+        config_data = self.invoke_post(headers, url, config_payload, None, None)
+        check_version_data = self.invoke_post(headers, url, check_version_payload, None, None)
+
+        self.write_string_file(watson_path, watson_data.content)
+        self.write_string_file(alwatson_path, alwatson_data.content)
+        self.write_string_file(config_path, config_data.content)
+        self.write_string_file(check_version_path, check_version_data.content)
+
+    def downloadDependencyScript(self):
+        home = expanduser("~")
+        license = json.loads( open(home+'/'+'.watson/license.wat', 'r+').read() )
+        key = license['ROBOT_KEY']
+        mac_id = self.get_mac_id()
+        client_url = license['ROBOT_GATEWAY_URL']
+        url = client_url + '/file'
+        headers = {"ROBOT_KEY": key, "MAC_ID":mac_id}
+
+        dependency_path = home+'/dependency_installer.py'
+        pre_dependency_path = home+'/pre_dependency_installer.py'
+
+        dependency_payload = json.dumps({"filename":"dependency_installer.py"})
+        pre_dependency_payload = json.dumps({"filename":"pre_dependency_installer.py"})
+
+        dependency_data = self.invoke_post(headers, url, dependency_payload, None, None)
+        pre_dependency_data = self.invoke_post(headers, url, pre_dependency_payload, None, None)
+
+        self.write_string_file(dependency_path, dependency_data.content)
+        self.write_string_file(pre_dependency_path, pre_dependency_data.content)
+
+    def validateQRFormat(self, propertyNames, QRString):
+        count = 0
+        try:
+            QRString_json = json.loads(QRString)
+        except:
+            return False
+        for s in QRString_json.keys():
+            for propertyName in propertyNames:
+                if s == propertyName:
+                    count = count + 1
+        if count == len(propertyNames):
+            return True
+        else:
+            return False
+
+    def registerRobot(self):
+        home = expanduser("~")
+        license = json.loads( open(home+'/'+'.watson/license.wat', 'r+').read() )
+        key = license['ROBOT_KEY']
+        mac_id = self.get_mac_id()
+        client_url = license['ROBOT_GATEWAY_URL'] + '/register'
+        headers = {}
+        watson_payload = json.dumps({"robotKey":key,"robotName":"nao","macId":mac_id})
+
+        watson_data = self.invoke_post(headers, client_url, watson_payload, None, None)
+
+        print watson_data
+        if watson_data.status_code != 200:
+            # Not a good response code
+            self.logger.info("Registration Post Call Failed")
+            return False
+        try:
+            s = json.loads(watson_data.content)
+        except: # Not a valid JSON reponse
+            self.logger.info("Not a valid JSON Response From Server")
+
+            return False
+
+        if s['status'] == 1:
+            # Robot was registered
+            self.logger.info("Robot Was Registered")
+            return True
+
+        if s['status'] == 0:
+
+            if s['error'] == "ROBOT_ALREADY_REGISTERED":
+                # Robot is already registered
+                self.logger.info("Robot Was Already Registered")
+                return True
+            return False
+    def loadJsonFile(self, fileName):
+        filePath = self.framemanager.getBehaviorPath(self.behaviorId) + fileName
+        with open (filePath, "r") as myfile:
+            data=myfile.read().replace('\n', '')
+        return json.loads(data)
+        #self.logger.info(data)
+        #self.logger.info(json.loads(data))
+
+
+    def loadDependecies(self):
+        try:
+            os.system('curl  https://bootstrap.pypa.io/get-pip.py --output ~/get-pip.py --silent')
+            self.tts.say("Finished installing 1 of 4")
+
+        except:
+            self.logger.info("Problem with getting pip. get-pip.py did not download.")
+            self.onStopped() #activate the output of the box
+            return
+        self.logger.info("get-pip.py downloaded sucessfully.")
+
+
+        try:
+            os.system('python ~/get-pip.py --user')
+            self.tts.say("Finished installing 2 of 4")
+
+        except:
+            self.logger.info("Problem with intalling pip.")
+            self.onStopped() #activate the output of the box
+            return
+        self.logger.info("Pip installed sucessfully.")
+
+        import pip
+        try:
+            pip.main(['install', '--user', 'ws4py'])
+            self.tts.say("Finished installing 3 of 4")
+        except:
+            self.logger.info("Problem with installing ws4py.")
+            self.onStopped() #activate the output of the box
+            return
+        self.logger.info("Ws4py installed sucessfully.")
+
+
+        try:
+            pip.main(['install', '--user', 'requests'])
+            self.tts.say("Finished installing 4 of 4")
+        except:
+            self.logger.info("Problem with installing requests.")
+            self.onStopped() #activate the output of the box
+            return
+        self.logger.info("requests installed sucessfully.")]]>
+</content>
+                            </script>
+                            <Input name="onLoad" type="1" type_size="1" nature="0" inner="1" tooltip="Signal sent when diagram is loaded." id="1" />
+                            <Input name="onStart" type="1" type_size="1" nature="2" inner="0" tooltip="Box behavior starts when a signal is received on this input." id="2" />
+                            <Output name="onStopped" type="1" type_size="1" nature="1" inner="0" tooltip="Signal sent when box behavior is finished." id="3" />
+                        </Box>
+                        <Link inputowner="0" indexofinput="4" outputowner="3" indexofoutput="3" />
+                        <Link inputowner="3" indexofinput="2" outputowner="0" indexofoutput="2" />
+                    </Diagram>
+                </BehaviorKeyframe>
+            </BehaviorLayer>
+        </Timeline>
+    </Box>
+</ChoregrapheProject>

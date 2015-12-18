@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>AUDIO_OUTPUT_PATH</key>
+	<string>recordings/watson_tts/tts_response.wav</string>
+	<key>AUDIO_INPUT_PATH</key>
+	<string>recordings/microphones/recording.wav</string>
+	<key>LICENSE</key>
+	<string>.watson/license.wat</string>
+	<key>LICENSE_ERROR</key>
+	<string>Warning: No license found! Please run QR code behavior to register your robot.</string>
+	<key>SERVICE_MAP</key>
+	<dict>
+		<key>initDialog</key>
+		<string>initDialog</string>
+		<key>askDialog</key>
+		<string>askDialog</string>
+		<key>tts</key>
+		<string>service</string>
+		<key>stt</key>
+		<string>service</string>
+		<key>personality-insights</key>
+		<string>service</string>
+		<key>tradeoff-analytics</key>
+		<string>service</string>
+		<key>language-translation</key>
+		<string>service</string>
+		<key>thunderstone</key>
+		<string>service</string>
+	</dict>
+	<key>STT_ERROR_JSON</key>
+	<string>Sorry, I don&apos;t think I heard you</string>
+	<key>TRADEOFF_ERROR</key>
+	<string>Malformatted input string</string>
+	<key>LANGUAGE_TRANSLATION_ENGLISH</key>
+	<array>
+		<string>english</string>
+		<string>en</string>
+		<string>eng</string>
+		<string>enus</string>
+	</array>
+	<key>LANGUAGE_TRANSLATION_SPANISH</key>
+	<array>
+		<string>spanish</string>
+		<string>es</string>
+		<string>espanol</string>
+		<string>esp</string>
+		<string>eses</string>
+	</array>
+	<key>LANGUAGE_TRANSLATION_FRENCH</key>
+	<array>
+		<string>french</string>
+		<string>fr</string>
+		<string>francais</string>
+		<string>fra</string>
+		<string>fre</string>
+		<string>frfr</string>
+	</array>
+	<key>LANGUAGE_TRANSLATION_PORTUGUESE</key>
+	<array>
+		<string>portuguese</string>
+		<string>portugese</string>
+		<string>por</string>
+		<string>pt</string>
+		<string>ptbr</string>
+	</array>
+	<key>LANGUAGE_TRANSLATION_ARABIC</key>
+	<array>
+		<string>arabic</string>
+		<string>ar</string>
+		<string>ara</string>
+		<string>arar</string>
+	</array>
+	<key>LANGUAGE_TRANSLATION_ENGLISH_TO_SPANISH</key>
+	<string>en-es</string>
+	<key>LANGUAGE_TRANSLATION_ENGLISH_TO_FRENCH</key>
+	<string>en-fr</string>
+	<key>LANGUAGE_TRANSLATION_ENGLISH_TO_PORTUGUESE</key>
+	<string>en-pt</string>
+	<key>LANGUAGE_TRANSLATION_ENGLISH_TO_ARABIC
+LANGUAGE_TRANSLATION_ENGLISH_TO_ARABIC : en-ar
+</key>
+	<string>en-ar</string>
+	<key>LANGUAGE_TRANSLATION_SPANISH_TO_ENGLISH</key>
+	<string>es-en</string>
+	<key>LANGUAGE_TRANSLATION_FRENCH_TO_ENGLISH</key>
+	<string>fr-en</string>
+	<key>LANGUAGE_TRANSLATION_PORTUGUESE_TO_ENGLISH</key>
+	<string>pt-en</string>
+	<key>LANGUAGE_TRANSLATION_ARABIC_TO_ENGLISH</key>
+	<string>ar-en</string>
+	<key>LANGUAGE_TRANLATION_ERROR_ENGLISH</key>
+	<string>{&apos;error&apos; : &apos;English can only be translated to Spanish, French, Arabic and Portuguese&apos;}</string>
+	<key>LANGUAGE_TRANLATION_ERROR_FRENCH</key>
+	<string>{&apos;error&apos;:&apos;French can only be translated to English&apos;}</string>
+	<key>LANGUAGE_TRANLATION_ERROR_SPANISH</key>
+	<string>{&apos;error&apos;:&apos;Spanish can only be translated to English&apos;}</string>
+	<key>LANGUAGE_TRANLATION_ERROR_PORTUGUESE</key>
+	<string>{&apos;error&apos;:&apos;Portuguese can only be translated to English&apos;}</string>
+	<key>LANGUAGE_TRANLATION_ERROR_ARABIC</key>
+	<string>{&apos;error&apos;:&apos;Arabic can only be translated to English&apos;}</string>
+	<key>LANGUAGE_TRANLATION_ERROR_ALL</key>
+	<string>{&apos;error&apos;: &apos;You can only translate english to french, spanish or portuguese and vice versa. You can also translate arabic to english&apos;}</string>
+</dict>
+</plist>

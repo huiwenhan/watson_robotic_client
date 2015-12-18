@@ -1,0 +1,89 @@
+<!doctype html>
+<html>
+<head>
+    <title>REAL_TITLE</title>
+    <style>
+        html {
+            background: black;
+            height:100%;
+        }
+
+    </style>
+</head>
+<body style='margin:0; padding: 0; height:100%; overflow: hidden;'>
+<iframe id='fr' style="width:100%; height:100%; border:0;" src=''></iframe>
+
+<script>
+    function getURLParam(name){
+        var results = new RegExp('[\\?&amp;]' + name + '=([^&amp;#]*)').exec(window.location.href);
+
+        return results ? (results[1] || 0) : null;
+    }
+
+    var host = "watson-robotgateway.mybluemix.net/webApp/wayblazer-ws";
+    var id = "NO_ID";
+
+    console.log("Query: "+host);
+
+    function tryReconnect()
+    {
+        setTimeout(function(){
+            console.log("trying to reconnect");
+            connectSocket();
+        },5000);
+    }
+
+
+    function connectSocket()
+    {
+        var socketId= Date.now();
+        var socket = new WebSocket("wss://"+host);
+        var heartInt = null;
+        socket.onopen = function(){
+            console.log("Socket has been opened!");
+            socket.send("id " + id);
+        };
+
+        socket.onmessage = function(msg){
+            console.log("SocketID: "+socketId);
+            var url = msg.data.substring(4);
+            document.getElementById("fr").src=url;
+        };
+
+        socket.onclose = function(){
+            console.log("Socket disconnect");
+            socket.close();
+        };
+
+        socket.onerror = function(e){
+            console.log("Socket error: "+e);
+            console.log(e);
+            socket.close();
+        };
+    }
+    connectSocket();
+
+
+    // change title if fullscreen detected
+    setTimeout(function () {
+        console.log("A: "+window.innerWidth+" "+window.innerHeight);
+        if (window.innerWidth >= 1900 && window.innerHeight >= 1040) {
+            document.title = "REAL_TITLE_FULL";
+        }
+
+    }, 1000);
+
+
+        if(id=="1")
+        {
+            document.querySelector("iframe").src="http://9.37.100.157:8081/watson/wea/demo/iPhoneDemo.html";
+        }else if(id=="2")
+        {
+            document.querySelector("iframe").src="http://wdvm008.swg.usma.ibm.com:8080/pathlite/";
+        } else if(id=="3")
+        {
+            document.querySelector("iframe").src="https://watsondemo04.rch.stglabs.ibm.com/demo04/AppSrv01/wdao/index.jsp";
+        }
+</script>
+</body>
+</html>

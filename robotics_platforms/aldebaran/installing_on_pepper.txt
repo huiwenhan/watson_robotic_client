@@ -1,0 +1,12 @@
+add this to your .bashrc (dont forget to source afterwards)
+PATH=$PATH:~/.local/bin
+
+easy_install --user pip
+
+Source:http://askubuntu.com/questions/363300/how-to-install-pip-python-to-user-without-root-access
+
+then to install pip libraries do this
+pip install --user <package_name>
+
+Source: http://stackoverflow.com/questions/7465445/how-to-install-python-modules-without-root-access
+

@@ -1,0 +1,1 @@
+{"ROBOT_GATEWAY_URL":"https://watson-robotgateway.mybluemix.net/webApp/v1/en","TRANSIENT_KEY":"2e6bf04b-02e5-4206-947c-2ba810ca1804","ROBOT_GATEWAY_SOCKET_URL":"wss://watson-robotgateway.mybluemix.net/webApp"}

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDESourceControlProjectFavoriteDictionaryKey</key>
+	<false/>
+	<key>IDESourceControlProjectIdentifier</key>
+	<string>DC9E2788-6077-4471-AAAF-AE1CC5122D7E</string>
+	<key>IDESourceControlProjectName</key>
+	<string>Watson</string>
+	<key>IDESourceControlProjectOriginsDictionary</key>
+	<dict>
+		<key>6E0A79F6AB04C81FB2A5B8999A456C046E2F78DE</key>
+		<string>https://hub.jazz.net/git/sanjayko/robots_gateway</string>
+	</dict>
+	<key>IDESourceControlProjectPath</key>
+	<string>robot_gateway_client/robotics_clients/objective_c/Watson/Watson.xcodeproj</string>
+	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
+	<dict>
+		<key>6E0A79F6AB04C81FB2A5B8999A456C046E2F78DE</key>
+		<string>../../../../../..</string>
+	</dict>
+	<key>IDESourceControlProjectURL</key>
+	<string>https://hub.jazz.net/git/sanjayko/robots_gateway</string>
+	<key>IDESourceControlProjectVersion</key>
+	<integer>111</integer>
+	<key>IDESourceControlProjectWCCIdentifier</key>
+	<string>6E0A79F6AB04C81FB2A5B8999A456C046E2F78DE</string>
+	<key>IDESourceControlProjectWCConfigurations</key>
+	<array>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>6E0A79F6AB04C81FB2A5B8999A456C046E2F78DE</string>
+			<key>IDESourceControlWCCName</key>
+			<string>release_gateway15</string>
+		</dict>
+	</array>
+</dict>
+</plist>

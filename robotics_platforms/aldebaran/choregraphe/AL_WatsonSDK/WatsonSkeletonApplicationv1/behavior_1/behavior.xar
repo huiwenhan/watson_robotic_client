@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ChoregrapheProject xmlns="http://www.aldebaran-robotics.com/schema/choregraphe/project.xsd" xar_version="3">
+    <Box name="root" id="-1" localization="8" tooltip="Root box of Choregraphe&apos;s behavior. Highest level possible." x="0" y="0">
+        <bitmap>media/images/box/root.png</bitmap>
+        <script language="4">
+            <content>
+                <![CDATA[]]>
+</content>
+        </script>
+        <Input name="onLoad" type="1" type_size="1" nature="0" inner="1" tooltip="Signal sent when diagram is loaded." id="1" />
+        <Input name="onStart" type="1" type_size="1" nature="2" inner="0" tooltip="Box behavior starts when a signal is received on this input." id="2" />
+        <Input name="onStop" type="1" type_size="1" nature="3" inner="0" tooltip="Box behavior stops when a signal is received on this input." id="3" />
+        <Output name="onStopped" type="1" type_size="1" nature="1" inner="0" tooltip="Signal sent when box behavior is finished." id="4" />
+        <Timeline enable="0">
+            <BehaviorLayer name="behavior_layer1">
+                <BehaviorKeyframe name="keyframe1" index="1">
+                    <Diagram scale="50">
+                        <Box name="Switch Roles" id="2" localization="8" tooltip="" x="316" y="170">
+                            <bitmap>../../../../../../../../Users/priscillamoraes/Documents/IBM Documents/Watson logo/logo4.png</bitmap>
+                            <script language="4">
+                                <content>
+                                    <![CDATA[import json
+import uuid
+import requests
+from os.path import expanduser
+
+class MyClass(GeneratedClass):
+    def __init__(self):
+        GeneratedClass.__init__(self)
+
+    def onLoad(self):
+        #put initialization code here
+        self.watson = ALProxy('ALWatson')
+        self.player = ALProxy('ALAudioPlayer')
+        self.framemanager = ALProxy("ALFrameManager")
+        self.speech = ALProxy("ALAnimatedSpeech")
+        self.asr = ALProxy("ALSpeechRecognition")
+
+
+    def onUnload(self):
+        #put clean-up code here
+        pass
+
+    def onInput_onStart(self):
+        #self.onStopped() #activate the output of the box
+
+        keys = self.getRoles()
+        allRoles = []
+        sRoles = ""
+        for key in list(keys):
+            allRoles.append(key["group_name"])
+        for role in allRoles:
+            sRoles += str(role)+" "
+        self.logger.info("Roles in a given group: "+sRoles)
+        say = "Hello, I have been trained in a couple different roles. You will hear a ding sound, than you can say "+sRoles+" and I will enable that ability."
+        if len(allRoles) > 1:
+            say += " So, which role would you like me to play?"
+
+        self.logger.info( self.framemanager.getBehaviorPath(self.behaviorId) + "/Ding Sound Effect.mp3")
+        self.player.post.playFileFromPosition(self.framemanager.getBehaviorPath(self.behaviorId) + "/../Ding Sound Effect.mp3", 0, .3, 0)
+
+        #Calling stt_stream to get the desired role from the user
+        requestedRole = self.watson.stt_stream()
+        requestedRole_json = json.loads(requestedRole)
+        self.logger.info(requestedRole)
+        requestedRole = str(requestedRole_json['results'][0]['alternatives'][0]['transcript'])
+
+        self.logger.info("All roles: "+str(allRoles))
+        self.logger.info("Keys: "+str(keys))
+        for role in keys:
+            if self.wordRecognized:
+                self.logger.info("Found role: "+str(role["group_name"]))
+                home = expanduser("~")
+                license = json.loads( open(home+'/'+'.watson/license.wat', 'r+').read() )
+                license["ROBOT_KEY"] = role["key"]
+                try:
+                    fileName = open(expanduser("~") + "/" +'.watson/license.wat', 'w+')
+                    fileName.write(json.dumps(license))
+                    fileName.close()
+                    newRole = "OK, now I am a "+str(role["group_name"])
+                    self.speech.say(newRole)
+                    #self.watson.initialize_license()    #reloads the credentials of the robot in memory
+                    self.onStopped()
+                except:
+                    self.logger.error("I think I am not up to playing this role right now. Maybe later.")
+                    self.speech.say("I think I am not up to playing this role right now. Maybe later.")
+            else:
+                self.speech.say("I don't think I understood what you want me to be.")
+        self.onStopped()
+
+
+    def onInput_onStop(self):
+        self.onUnload() #it is recommended to reuse the clean-up as the box is stopped
+        self.onStopped() #activate the output of the box
+
+    def wordRecognized(self, requestedRole, groupName):
+        roleWords = requestedRole.split()
+        for word in roleWords:
+            if word.lower() in groupName.lower():
+                return true
+        return false
+
+    def getRoles(self):
+        home = expanduser("~")
+        license = json.loads(open(home+'/'+'.watson/license.wat', 'r+').read())
+        key = license['ROBOT_KEY']
+        mac_id = self.get_mac_id()
+        client_url = license['ROBOT_GATEWAY_URL']
+        url = client_url + '/getGroupRobots'
+        headers = {"ROBOT_KEY": key, "MAC_ID":mac_id}
+        response = self.invoke_get(headers, url, None, None, None)
+        code = int( response.status_code )
+        results = ""
+        if code == 200:
+            results = response.json()
+        else:
+            self.tts.say("I don't seem to be able to remember about my roles.. I might need some rest.")
+            self.onStopped()
+        results = results["keys"]
+        return results
+
+    def invoke_get(self, headers, url1, body=None, params = None, files = None):
+        """Universal method to format a post request
+        :param headers: Headers used in the post call
+        :param body: The text being posted
+        :param serviceName: The service that is being called
+        :param params: Parameters for the post call"""
+        return requests.request('GET', url1, verify=False, headers=headers, data=body, params=params, files=files)
+
+    def get_mac_id(self):
+        """Extracts the mac id from the robot. It is used when sending data to the gateway to ensure the robot is registered."""
+        mac = uuid.getnode()
+        return ':'.join('%02X' % ((mac >> 8*i) & 0xff) for i in reversed(xrange(6))).encode('ascii', 'ignore')]]>
+</content>
+                            </script>
+                            <Input name="onLoad" type="1" type_size="1" nature="0" inner="1" tooltip="Signal sent when diagram is loaded." id="1" />
+                            <Input name="onStart" type="1" type_size="1" nature="2" inner="0" tooltip="Box behavior starts when a signal is received on this input." id="2" />
+                            <Input name="onStop" type="1" type_size="1" nature="3" inner="0" tooltip="Box behavior stops when a signal is received on this input." id="3" />
+                            <Output name="onStopped" type="1" type_size="1" nature="1" inner="0" tooltip="Signal sent when box behavior is finished." id="4" />
+                        </Box>
+                        <Link inputowner="2" indexofinput="2" outputowner="0" indexofoutput="2" />
+                    </Diagram>
+                </BehaviorKeyframe>
+            </BehaviorLayer>
+        </Timeline>
+    </Box>
+</ChoregrapheProject>
